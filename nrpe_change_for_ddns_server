@@ -1,0 +1,32 @@
+#!/bin/bash
+DATE=`date +%Y-%m-%d@%H:%M:%S`
+dname=dryriver.zapto.org
+r_ip=$(dig +short $dname)
+c_ip=$(grep allowed_hosts /etc/nagios/nrpe.cfg | cut -d ',' -f2)
+
+echo ""$DATE" Checking real IP of $dname, because NRPE is stupid..."
+echo "IP is:"
+echo $r_ip
+echo "Config has:"
+echo $c_ip
+echo "Comparing:"
+
+if [[ "$r_ip" != "$c_ip" ]];then
+        echo "Need to chnage IP"
+        echo "Changing "$c_ip" to "$r_ip""
+                sed -i 's|'$c_ip'|'$r_ip'|g' /etc/nagios/nrpe.cfg
+        echo "Changed to:"
+                grep allowed_hosts /etc/nagios/nrpe.cfg | cut -d ',' -f2
+        echo "Restarting NRPE:"
+                systemctl restart nrpe.service
+                systemctl status nrpe.service | grep vps.artesa.bg
+        echo "Changing in Plesk firewall:"
+        /usr/local/psa/bin/modules/firewall/settings -s -id 47 -direction input -action allow -ports '5666/tcp' -remote-addresses ""$r_ip"" -n Nagios
+        /usr/local/psa/bin/modules/firewall/settings -a
+        /usr/local/psa/bin/modules/firewall/settings -c
+        echo "New rule:"
+        iptables -L | grep nrpe
+
+else
+        echo "Life is good in the hood."
+fi
