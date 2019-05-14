@@ -1,0 +1,15 @@
+#!/bin/bash
+# Designed to clear exim queues from old (frozen) and bad sender mail.
+# Clear frozen messages first:
+# Note using exipick instead of grep to avoid wierdness.
+
+f_count=$(exipick -iz | wc -l)
+martian_count=$(exipick -b | grep "<>" | cut -d' ' -f1 | wc -l)
+
+echo "Deleting $f_count frozen messages..."
+exipick -zi | xargs exim -Mrm > /dev/null && echo "Done"
+
+# Clear messages from <>
+
+echo "Deleting $martian_count messages..."
+exipick -b | grep "<>" | cut -d' ' -f1 | xargs exim -Mrm > /dev/null && echo "Done"
