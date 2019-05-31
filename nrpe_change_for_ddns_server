@@ -1,6 +1,9 @@
 #!/bin/bash
+# This will check where example.com is pointing to and update NRPE to accept queries from the new IP.
+# ALso updates Plesk firewall
 DATE=`date +%Y-%m-%d@%H:%M:%S`
-dname=dryriver.zapto.org
+dname=example.com
+full_host=$(hostname -f)
 r_ip=$(dig +short $dname)
 c_ip=$(grep allowed_hosts /etc/nagios/nrpe.cfg | cut -d ',' -f2)
 
@@ -19,7 +22,7 @@ if [[ "$r_ip" != "$c_ip" ]];then
                 grep allowed_hosts /etc/nagios/nrpe.cfg | cut -d ',' -f2
         echo "Restarting NRPE:"
                 systemctl restart nrpe.service
-                systemctl status nrpe.service | grep vps.artesa.bg
+                systemctl status nrpe.service | grep $full_host
         echo "Changing in Plesk firewall:"
         /usr/local/psa/bin/modules/firewall/settings -s -id 47 -direction input -action allow -ports '5666/tcp' -remote-addresses ""$r_ip"" -n Nagios
         /usr/local/psa/bin/modules/firewall/settings -a
