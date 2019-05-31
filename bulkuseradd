@@ -1,0 +1,25 @@
+#!/bin/bash
+#While loop to create users en bulk. Also we user urandom to generate a nice 16 character password. First argument needs to be a name of a user file
+usage=$(cat << EOF
+USAGE:
+        While loop to create users en bulk. Also sets a nice 16 character password. 
+        First argument needs to be the path to the list of newline delimited users.
+        e.g:
+        $0 userlist
+EOF
+)
+
+if [ -z $1 ]; then
+  echo $usage
+  exit 0
+fi
+
+while read name
+        do
+                /usr/sbin/useradd -m $name
+                #If special groups needed, add them here.
+                #/usr/sbin/usermod -G users $name
+                pass=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1)
+                echo "$name:$pass" | chpasswd
+                echo $name $pass
+done < $1
